@@ -12,5 +12,6 @@ server.listen(PORT, () => {
 
 process.on("SIGINT", () => {
     console.log("Server shutting down...")
+    
     server.close(() => process.exit(0))
 })

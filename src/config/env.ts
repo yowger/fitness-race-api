@@ -4,4 +4,8 @@ dotenv.config()
 export const ENV = {
     NODE_ENV: process.env.NODE_ENV || "development",
     PORT: process.env.PORT || 4000,
+    SUPABASE: {
+        URL: process.env.SUPABASE_URL!,
+        KEY: process.env.SUPABASE_KEY!,
+    },
 }
