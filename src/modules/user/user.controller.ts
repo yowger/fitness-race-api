@@ -1,14 +1,8 @@
 import { Request, Response } from "express"
-import z from "zod"
 
 import * as userService from "./user.service"
 import { validator } from "../../utils/validator"
-
-const createUserSchema = z.object({
-    email: z.email(),
-    password: z.string().min(6),
-    fullName: z.string().min(1),
-})
+import { createUserSchema } from "./user.schema"
 
 const { getBody } = validator({
     body: createUserSchema,
@@ -38,7 +32,6 @@ export const createUser = async (req: Request, res: Response) => {
         const { email, password, fullName } = getBody(req)
 
         const user = await userService.createUser({ email, password, fullName })
-        const accessToken = await userService.signInUser(email, password)
 
         res.status(201).json({
             user: {
@@ -46,7 +39,6 @@ export const createUser = async (req: Request, res: Response) => {
                 email: user.email,
                 fullName: user.user_metadata.full_name,
             },
-            accessToken,
         })
     } catch (err) {
         if (err instanceof Error) {

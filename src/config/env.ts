@@ -8,5 +8,6 @@ export const ENV = {
         URL: process.env.SUPABASE_URL!,
         KEY: process.env.SUPABASE_KEY!,
         SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        CONNECTION_STRING: process.env.SUPABASE_CONNECTION_STRING!,
     },
 }

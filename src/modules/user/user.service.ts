@@ -23,29 +23,30 @@ export const createUser = async ({
     password,
     fullName,
 }: CreateUserInput) => {
-    const { data, error } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { full_name: fullName },
-    })
+    const { data: authData, error: authError } =
+        await supabase.auth.admin.createUser({
+            email,
+            password,
+            email_confirm: true,
+            user_metadata: { full_name: fullName },
+        })
 
-    if (error) {
-        throw new Error(error.message)
+    if (authError || !authData.user) {
+        throw new Error(authError?.message || "Failed to create auth user")
     }
 
-    return data.user
-}
+    const authUserId = authData.user.id
 
-export const signInUser = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-    })
+    const { data: userData, error: userError } = await supabase
+        .from("users")
+        .insert([{ id: authUserId, full_name: fullName, email }])
+        .select()
+        .single()
 
-    if (error) {
-        throw new Error(error.message)
+    if (userError || !userData) {
+        throw new Error(userError?.message || "Failed to create app user")
     }
 
-    return data.session?.access_token
+    return userData
 }
+
