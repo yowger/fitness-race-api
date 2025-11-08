@@ -1,6 +1,6 @@
 -- USERS
 CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT auth.uid(),
     full_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     username TEXT UNIQUE,

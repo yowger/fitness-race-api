@@ -1,5 +1,4 @@
 import { Request, Response } from "express"
-
 import * as userService from "./user.service"
 import { validator } from "../../utils/validator"
 import { createUserSchema } from "./user.schema"
@@ -12,7 +11,6 @@ export const getProfile = async (req: Request, res: Response) => {
     if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" })
     }
-
     res.json(req.user)
 }
 
@@ -28,21 +26,23 @@ export const listUsers = async (_req: Request, res: Response) => {
 }
 
 export const createUser = async (req: Request, res: Response) => {
-    try {
-        const { email, password, fullName } = getBody(req)
+    const { id, email, fullName, username, avatar_url } = getBody(req)
 
-        const user = await userService.createUser({ email, password, fullName })
+    const user = await userService.createUser({
+        id,
+        email,
+        fullName,
+        username,
+        avatar_url,
+    })
 
-        res.status(201).json({
-            user: {
-                userId: user.id,
-                email: user.email,
-                fullName: user.user_metadata.full_name,
-            },
-        })
-    } catch (err) {
-        if (err instanceof Error) {
-            res.status(400).json({ error: err.message })
-        }
-    }
+    res.status(201).json({
+        user: {
+            id: user.id,
+            email: user.email,
+            full_name: user.full_name,
+            username: user.username,
+            avatar_url: user.avatar_url,
+        },
+    })
 }

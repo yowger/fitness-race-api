@@ -24,86 +24,62 @@ const createRunSchema = z.object({
 const { getBody } = validator({ body: createRunSchema })
 
 export const listRuns = async (req: Request, res: Response) => {
-    try {
-        const userId = req.user?.id
+    const userId = req.user?.id
 
-        if (!userId) {
-            return res.status(401).json({ error: "Not authenticated" })
-        }
-
-        const runs = await runService.getAllRuns(userId)
-        res.json(runs)
-    } catch (err) {
-        if (err instanceof Error) {
-            res.status(400).json({ error: err.message })
-        }
+    if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" })
     }
+
+    const runs = await runService.getAllRuns(userId)
+    res.json(runs)
 }
 
 export const getRunById = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params
-        const run = await runService.getRunById(id)
+    const { id } = req.params
+    const run = await runService.getRunById(id)
 
-        if (!run) {
-            return res.status(404).json({ error: "Run not found" })
-        }
-
-        res.json(run)
-    } catch (err) {
-        if (err instanceof Error) {
-            res.status(400).json({ error: err.message })
-        }
+    if (!run) {
+        return res.status(404).json({ error: "Run not found" })
     }
+
+    res.json(run)
 }
 
 export const createRun = async (req: Request, res: Response) => {
-    try {
-        const {
-            name,
-            distance,
-            time,
-            pace,
-            route,
-            map_image,
-            start_address,
-            end_address,
-        } = getBody(req)
+    const {
+        name,
+        distance,
+        time,
+        pace,
+        route,
+        map_image,
+        start_address,
+        end_address,
+    } = getBody(req)
 
-        const created_by = req.user?.id
+    const created_by = req.user?.id
 
-        if (!created_by) {
-            return res.status(401).json({ error: "Not authenticated" })
-        }
-
-        const run = await runService.createRun({
-            name,
-            distance,
-            time,
-            pace,
-            route,
-            map_image,
-            start_address,
-            end_address,
-            created_by,
-        })
-
-        res.status(201).json(run)
-    } catch (err) {
-        if (err instanceof Error) {
-            res.status(400).json({ error: err.message })
-        }
+    if (!created_by) {
+        return res.status(401).json({ error: "Not authenticated" })
     }
+
+    const run = await runService.createRun({
+        name,
+        distance,
+        time,
+        pace,
+        route,
+        map_image,
+        start_address,
+        end_address,
+        created_by,
+    })
+
+    res.status(201).json(run)
 }
 
 export const deleteRun = async (req: Request, res: Response) => {
-    try {
-        const { id } = req.params
-        await runService.deleteRun(id)
-        res.json({ message: "Run deleted successfully" })
-    } catch (err) {
-        if (err instanceof Error) {
-            res.status(400).json({ error: err.message })
-        }
-    }
+    const { id } = req.params
+    await runService.deleteRun(id)
+    res.json({ message: "Run deleted successfully" })
 }

@@ -1,11 +1,16 @@
 import { supabase } from "../../config/supabase"
 
-interface CreateRunInput {
+export interface RunPoint {
+    latitude: number
+    longitude: number
+}
+
+export interface CreateRunInput {
     name: string
     distance: number
     time: number
     pace: string
-    route: { latitude: number; longitude: number }[]
+    route: RunPoint[]
     map_image?: string
     start_address?: string
     end_address?: string
@@ -16,8 +21,8 @@ export const getAllRuns = async (userId: string) => {
     const { data, error } = await supabase
         .from("runs")
         .select("*")
-        .eq("user_id", userId)
-        .order("start_time", { ascending: false })
+        .eq("created_by", userId)
+        .order("created_at", { ascending: false })
 
     if (error) throw new Error(error.message)
     return data
@@ -35,25 +40,21 @@ export const getRunById = async (id: string) => {
 }
 
 export const createRun = async (input: CreateRunInput) => {
-    const geojson = {
-        type: "LineString",
-        coordinates: input.route.map((p) => [p.longitude, p.latitude]),
-    }
+    const routeJson = JSON.stringify(input.route)
 
     const { data, error } = await supabase
         .from("runs")
         .insert([
             {
-                user_id: input.created_by,
                 name: input.name,
-                total_distance: input.distance,
-                total_duration: input.time,
-                avg_pace: input.pace,
+                distance: input.distance,
+                time: input.time,
+                pace: input.pace,
+                route: routeJson,
+                map_image: input.map_image,
                 start_address: input.start_address,
                 end_address: input.end_address,
-                geojson,
-                map_image: input.map_image,
-                end_time: new Date().toISOString(),
+                created_by: input.created_by,
             },
         ])
         .select()

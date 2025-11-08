@@ -1,52 +1,46 @@
 import { supabase } from "../../config/supabase"
 
 export interface CreateUserInput {
+    id: string // this should be the Auth UID from client
     email: string
-    password: string
     fullName: string
+    username?: string
+    avatar_url?: string
 }
 
 export const getAllUsers = async () => {
     const { data, error } = await supabase
         .from("users")
-        .select("id, email, username")
+        .select("id, email, full_name, username, avatar_url")
 
-    if (error) {
-        throw new Error(error.message)
-    }
-
+    if (error) throw new Error(error.message)
     return data
 }
 
 export const createUser = async ({
+    id,
     email,
-    password,
     fullName,
+    username,
+    avatar_url,
 }: CreateUserInput) => {
-    const { data: authData, error: authError } =
-        await supabase.auth.admin.createUser({
-            email,
-            password,
-            email_confirm: true,
-            user_metadata: { full_name: fullName },
-        })
-
-    if (authError || !authData.user) {
-        throw new Error(authError?.message || "Failed to create auth user")
-    }
-
-    const authUserId = authData.user.id
-
-    const { data: userData, error: userError } = await supabase
+    const { data, error } = await supabase
         .from("users")
-        .insert([{ id: authUserId, full_name: fullName, email }])
+        .insert([
+            {
+                id,
+                email,
+                full_name: fullName,
+                username,
+                avatar_url,
+            },
+        ])
         .select()
         .single()
 
-    if (userError || !userData) {
-        throw new Error(userError?.message || "Failed to create app user")
+    if (error || !data) {
+        throw new Error(error?.message || "Failed to create app user")
     }
 
-    return userData
+    return data
 }
-
