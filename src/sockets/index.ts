@@ -19,6 +19,7 @@ export const initSocket = (server: HttpServer) => {
         console.log("Client connected:", socket.id)
 
         socket.on("joinRoom", (roomId: string, user: { name?: string }) => {
+            if (!user) return
             socket.join(roomId)
 
             if (!rooms[roomId]) rooms[roomId] = []
