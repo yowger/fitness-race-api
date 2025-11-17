@@ -1,11 +1,22 @@
 import { supabase } from "../../config/supabase"
 
 export interface CreateUserInput {
-    id: string // this should be the Auth UID from client
+    id: string
     email: string
     fullName: string
     username?: string
     avatar_url?: string
+}
+
+export const getUserById = async (id: string) => {
+    const { data, error } = await supabase
+        .from("users")
+        .select("id, email, full_name, username, avatar_url")
+        .eq("id", id)
+        .single()
+
+    if (error) throw new Error(error.message)
+    return data
 }
 
 export const getAllUsers = async () => {

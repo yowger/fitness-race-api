@@ -11,7 +11,13 @@ export const getProfile = async (req: Request, res: Response) => {
     if (!req.user) {
         return res.status(401).json({ message: "Not authenticated" })
     }
-    res.json(req.user)
+
+    try {
+        const profile = await userService.getUserById(req.user.id)
+        return res.json(profile)
+    } catch (error: any) {
+        return res.status(400).json({ message: error.message })
+    }
 }
 
 export const listUsers = async (_req: Request, res: Response) => {
