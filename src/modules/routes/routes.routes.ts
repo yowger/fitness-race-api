@@ -1,11 +1,14 @@
 import { Router } from "express"
+
 import * as routeController from "./routes.controller"
+import { asyncHandler } from "../../utils/asyncHandler"
+import { authMiddleware } from "../../middlewares/auth.middleware"
 
 const router = Router()
 
-router.get("/", routeController.listRoutes)
-router.get("/:id", routeController.getRouteById)
-router.post("/", routeController.createRoute)
-router.delete("/:id", routeController.deleteRoute)
+router.get("/", authMiddleware, asyncHandler(routeController.listRoutes))
+router.get("/:id", authMiddleware, asyncHandler(routeController.getRouteById))
+router.post("/", authMiddleware, asyncHandler(routeController.createRoute))
+router.delete("/:id", authMiddleware, asyncHandler(routeController.deleteRoute))
 
 export default router
