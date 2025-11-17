@@ -22,6 +22,7 @@ export interface CreateRouteInput {
     description?: string
     distance?: number
     geojson: FeatureCollection<LineString>
+    map_url?: string
     createdBy?: string
 }
 
@@ -31,6 +32,7 @@ export interface RouteResponse {
     description?: string
     distance?: number
     geojson: FeatureCollection<LineString>
+    map_url?: string
     created_by?: string
     created_at?: string
 }
@@ -38,7 +40,9 @@ export interface RouteResponse {
 export const getAllRoutes = async (): Promise<RouteResponse[]> => {
     const { data, error } = await supabase
         .from("routes")
-        .select("id, name, description, distance, created_by, created_at")
+        .select(
+            "id, name, description, distance, geojson, map_url, created_by, created_at"
+        )
 
     if (error) throw new Error(error.message)
     return data as RouteResponse[]
@@ -66,6 +70,7 @@ export const createRoute = async (
                 description: input.description,
                 distance: input.distance,
                 geojson: input.geojson,
+                map_url: input.map_url,
                 created_by: input.createdBy,
             },
         ])

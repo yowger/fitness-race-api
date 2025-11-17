@@ -5,4 +5,5 @@ export const createRouteSchema = z.object({
     description: z.string().optional(),
     distance: z.number().positive().optional(),
     geojson: z.any(),
+    map_url: z.string().optional(),
 })
