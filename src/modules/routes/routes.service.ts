@@ -79,15 +79,34 @@ export const getRoutesPaginated = async (
     return data as RouteResponseWithUser[]
 }
 
-export const getRouteById = async (id: string): Promise<RouteResponse> => {
+export const getRouteById = async (
+    id: string
+): Promise<RouteResponseWithUser> => {
     const { data, error } = await supabase
         .from("routes")
-        .select("*")
+        .select(
+            `
+            id,
+            name,
+            description,
+            distance,
+            geojson,
+            map_url,
+            created_by,
+            created_at,
+            users (
+                id,
+                email,
+                full_name,
+                avatar_url
+            )
+        `
+        )
         .eq("id", id)
         .single()
 
     if (error) throw new Error(error.message)
-    return data as RouteResponse
+    return data as RouteResponseWithUser
 }
 
 export const createRoute = async (
