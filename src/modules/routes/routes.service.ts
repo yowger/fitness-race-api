@@ -37,15 +37,46 @@ export interface RouteResponse {
     created_at?: string
 }
 
-export const getAllRoutes = async (): Promise<RouteResponse[]> => {
+export interface UserInfo {
+    id: string
+    email?: string
+    full_name?: string
+    avatar_url?: string
+}
+
+export interface RouteResponseWithUser extends RouteResponse {
+    user?: UserInfo
+}
+
+export const getRoutesPaginated = async (
+    limit = 20,
+    offset = 0
+): Promise<RouteResponseWithUser[]> => {
     const { data, error } = await supabase
         .from("routes")
         .select(
-            "id, name, description, distance, geojson, map_url, created_by, created_at"
+            `
+            id,
+            name,
+            description,
+            distance,
+            geojson,
+            map_url,
+            created_by,
+            created_at,
+            users (
+                id,
+                email,
+                full_name,
+                avatar_url
+            )
+        `
         )
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1)
 
     if (error) throw new Error(error.message)
-    return data as RouteResponse[]
+    return data as RouteResponseWithUser[]
 }
 
 export const getRouteById = async (id: string): Promise<RouteResponse> => {
