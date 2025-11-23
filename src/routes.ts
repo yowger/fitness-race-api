@@ -20,4 +20,8 @@ router.get("/health", (_req, res) => {
     return res.status(200).send("OK")
 })
 
+router.use((_req, res) => {
+    res.status(404).json({ message: "Not Found" })
+})
+
 export default router

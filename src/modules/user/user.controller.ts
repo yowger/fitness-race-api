@@ -12,33 +12,22 @@ export const getProfile = async (req: Request, res: Response) => {
         return res.status(401).json({ message: "Not authenticated" })
     }
 
-    try {
-        const profile = await userService.getUserById(req.user.id)
-        return res.json(profile)
-    } catch (error: any) {
-        return res.status(400).json({ message: error.message })
-    }
+    const profile = await userService.getUserById(req.user.id)
+    return res.json(profile)
 }
 
 export const listUsers = async (_req: Request, res: Response) => {
-    try {
-        const users = await userService.getAllUsers()
-        res.json(users)
-    } catch (err) {
-        if (err instanceof Error) {
-            res.status(400).json({ error: err.message })
-        }
-    }
+    const users = await userService.getAllUsers()
+    res.json(users)
 }
 
 export const createUser = async (req: Request, res: Response) => {
-    const { id, email, fullName, username, avatar_url } = getBody(req)
+    const { id, email, fullName, avatar_url } = getBody(req)
 
     const user = await userService.createUser({
         id,
         email,
         fullName,
-        username,
         avatar_url,
     })
 
@@ -47,7 +36,6 @@ export const createUser = async (req: Request, res: Response) => {
             id: user.id,
             email: user.email,
             full_name: user.full_name,
-            username: user.username,
             avatar_url: user.avatar_url,
         },
     })

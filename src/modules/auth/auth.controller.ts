@@ -1,5 +1,4 @@
 import { Request, Response } from "express"
-import { z } from "zod"
 
 import * as authService from "../auth/auth.service"
 import { signInSchema } from "./auth.schema"

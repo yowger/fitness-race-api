@@ -11,7 +11,7 @@ export interface CreateUserInput {
 export const getUserById = async (id: string) => {
     const { data, error } = await supabase
         .from("users")
-        .select("id, email, full_name, username, avatar_url")
+        .select("id, email, full_name")
         .eq("id", id)
         .single()
 
@@ -32,7 +32,6 @@ export const createUser = async ({
     id,
     email,
     fullName,
-    username,
     avatar_url,
 }: CreateUserInput) => {
     const { data, error } = await supabase
@@ -42,7 +41,6 @@ export const createUser = async ({
                 id,
                 email,
                 full_name: fullName,
-                username,
                 avatar_url,
             },
         ])
