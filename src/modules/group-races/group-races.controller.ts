@@ -6,28 +6,28 @@ import * as raceService from "./group-races.service"
 export const createRaceSchema = z.object({
     name: z.string().min(1, "Race name is required"),
     description: z.string().optional(),
-    start_time: z.string().datetime("Invalid start time format"),
-    end_time: z.string().datetime().optional(),
+    start_time: z.string("Invalid start time format"),
+    end_time: z.string().optional(),
     max_participants: z.number().int().optional(),
-    route_id: z.string().uuid().optional(),
+    route_id: z.string().optional(),
 })
 
 export const addParticipantSchema = z.object({
-    race_id: z.string().uuid(),
-    user_id: z.string().uuid(),
+    race_id: z.string(),
+    user_id: z.string(),
 })
 
 export const addTrackingSchema = z.object({
-    race_id: z.string().uuid(),
-    user_id: z.string().uuid(),
+    race_id: z.string(),
+    user_id: z.string(),
     latitude: z.number(),
     longitude: z.number(),
     recorded_at: z.string().optional(),
 })
 
 export const addResultSchema = z.object({
-    race_id: z.string().uuid(),
-    user_id: z.string().uuid(),
+    race_id: z.string(),
+    user_id: z.string(),
     finish_time: z.string(),
     position: z.number().int().optional(),
 })
@@ -48,9 +48,21 @@ export const createRace = async (req: Request, res: Response) => {
     }
 }
 
-export const listRaces = async (_req: Request, res: Response) => {
+export const listRaces = async (req: Request, res: Response) => {
     try {
-        const races = await raceService.getAllRaces()
+        const { name, status, startDate, endDate } = req.query
+
+        const filters = {
+            name: typeof name === "string" ? name : undefined,
+            status:
+                typeof status === "string"
+                    ? (status as "upcoming" | "ongoing" | "finished")
+                    : undefined,
+            startDate: typeof startDate === "string" ? startDate : undefined,
+            endDate: typeof endDate === "string" ? endDate : undefined,
+        }
+
+        const races = await raceService.getAllRaces(filters)
         res.json(races)
     } catch (err) {
         if (err instanceof Error) res.status(400).json({ error: err.message })

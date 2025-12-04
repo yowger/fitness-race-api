@@ -15,6 +15,13 @@ interface AddParticipantInput {
     user_id: string
 }
 
+interface GetAllRacesFilters {
+    name?: string
+    status?: "upcoming" | "ongoing" | "finished"
+    startDate?: string
+    endDate?: string
+}
+
 export const createRace = async (input: CreateRaceInput) => {
     const { data, error } = await supabase
         .from("group_races")
@@ -36,17 +43,35 @@ export const createRace = async (input: CreateRaceInput) => {
     return data
 }
 
-export const getAllRaces = async () => {
-    const { data, error } = await supabase
-        .from("group_races")
-        .select(
-            `
-      *,
-      routes(id, name, distance)
-    `
-        )
-        .order("start_time", { ascending: false })
+export const getAllRaces = async (filters?: GetAllRacesFilters) => {
+    let query = supabase.from("group_races").select(`
+            *, 
+            routes(id, name, distance, map_url)
+        `)
 
+    if (filters?.name) {
+        query = query.ilike("name", `%${filters.name}%`)
+    }
+
+    if (filters?.startDate) {
+        query = query.gte("start_time", filters.startDate)
+    }
+    if (filters?.endDate) {
+        query = query.lte("start_time", filters.endDate)
+    }
+
+    if (filters?.status) {
+        const now = new Date().toISOString()
+        if (filters.status === "upcoming") query = query.gt("start_time", now)
+        else if (filters.status === "ongoing")
+            query = query.gte("start_time", now).lte("end_time", now)
+        else if (filters.status === "finished")
+            query = query.lt("end_time", now)
+    }
+
+    query = query.order("start_time", { ascending: false })
+
+    const { data, error } = await query
     if (error) throw new Error(error.message)
     return data
 }
@@ -57,7 +82,7 @@ export const getRaceById = async (id: string) => {
         .select(
             `
       *,
-      routes(id, name, distance, geojson)
+      routes(*)
     `
         )
         .eq("id", id)
