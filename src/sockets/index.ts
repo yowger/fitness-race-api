@@ -1,15 +1,29 @@
 import { Server as HttpServer } from "http"
 import { Server, Socket } from "socket.io"
 
-type User = {
+export type UserIdentity = {
     id: string
-    name?: string
-    lat?: number
-    lng?: number
-    finished?: boolean
+    name: string
+    avatarUrl?: string
+    role: "admin" | "racer" | "guest"
+    bib?: number
 }
 
-const rooms: Record<string, User[]> = {}
+export type LiveRaceState = {
+    lat: number
+    lng: number
+    speed?: number
+    distance?: number
+    finished: boolean
+    lastUpdate: number
+}
+
+export type RaceUser = UserIdentity & {
+    socketId?: string
+    state: LiveRaceState
+}
+
+const rooms: Record<string, RaceUser[]> = {}
 
 export const initSocket = (server: HttpServer) => {
     const io = new Server(server, {
@@ -19,81 +33,73 @@ export const initSocket = (server: HttpServer) => {
     io.on("connection", (socket: Socket) => {
         console.log("Client connected:", socket.id)
 
-        socket.on("joinRoom", (roomId: string, user: { name?: string }) => {
+        socket.on("joinRoom", (roomId: string, user: UserIdentity) => {
             if (!user) return
 
-            console.log("User joined:", socket.id, user)
             socket.join(roomId)
-
             if (!rooms[roomId]) rooms[roomId] = []
 
-            if (!rooms[roomId].find((u) => u.id === socket.id)) {
+            const existing = rooms[roomId].find((u) => u.id === user.id)
+
+            if (existing) {
+                existing.socketId = socket.id
+            } else {
                 rooms[roomId].push({
-                    id: socket.id,
-                    name: user.name,
-                    lat: undefined,
-                    lng: undefined,
-                    finished: false,
+                    ...user,
+                    socketId: socket.id,
+                    state: {
+                        lat: 0,
+                        lng: 0,
+                        speed: 0,
+                        distance: 0,
+                        finished: false,
+                        lastUpdate: Date.now(),
+                    },
                 })
             }
 
             io.to(roomId).emit("roomParticipants", rooms[roomId])
         })
 
-        socket.on(
-            "locationUpdate",
-            ({
-                roomId,
-                lat,
-                lng,
-            }: {
-                roomId: string
-                lat: number
-                lng: number
-            }) => {
-                console.log("Location update:", roomId, socket.id, lat, lng)
+        socket.on("locationUpdate", ({ roomId, id, lat, lng }) => {
+            console.log("location update:....", roomId, id, lat, lng)
 
-                const user = rooms[roomId]?.find((u) => u.id === socket.id)
-                if (user) {
-                    user.lat = lat
-                    user.lng = lng
-                }
+            const user = rooms[roomId]?.find((u) => u.id === id)
+            if (!user) return
 
-                socket.to(roomId).emit("locationUpdate", {
-                    id: socket.id,
-                    lat,
-                    lng,
-                })
-            }
-        )
+            if (user.state.finished) return
 
-        socket.on("finishLine", ({ roomId }: { roomId: string }) => {
-            console.log("FINISH received from:", socket.id)
+            console.log("Updating location for user:", id, lat, lng)
 
-            const user = rooms[roomId]?.find((u) => u.id === socket.id)
-            if (user && !user.finished) {
-                user.finished = true
+            user.state.lat = lat
+            user.state.lng = lng
+            user.state.lastUpdate = Date.now()
 
-                console.log(
-                    `🏁 ${user.name || socket.id} finished in room ${roomId}`
-                )
+            socket.to(roomId).emit("locationUpdate", { id: user.id, lat, lng })
+        })
 
-                io.to(roomId).emit("userFinished", {
-                    id: socket.id,
-                    name: user.name,
-                })
-            }
+        socket.on("finishLine", ({ roomId, id }) => {
+            const user = rooms[roomId]?.find((u) => u.id === id)
+            if (!user) return
+
+            if (user.state.finished) return
+
+            user.state.finished = true
+            user.state.lastUpdate = Date.now()
+
+            io.to(roomId).emit("userFinished", { id: user.id, name: user.name })
         })
 
         socket.on("leaveRoom", (roomId: string) => {
-            console.log("Client left room:", socket.id, socket.id)
-
             io.to(roomId).emit("userLeft", { id: socket.id })
 
             socket.leave(roomId)
 
             if (rooms[roomId]) {
-                rooms[roomId] = rooms[roomId].filter((u) => u.id !== socket.id)
+                rooms[roomId] = rooms[roomId].filter(
+                    (u) => u.socketId !== socket.id
+                )
+
                 io.to(roomId).emit("roomParticipants", rooms[roomId])
             }
         })
@@ -102,7 +108,10 @@ export const initSocket = (server: HttpServer) => {
             console.log("Client disconnected:", socket.id)
 
             for (const roomId in rooms) {
-                rooms[roomId] = rooms[roomId].filter((u) => u.id !== socket.id)
+                const user = rooms[roomId].find((u) => u.socketId === socket.id)
+                if (user) {
+                    user.socketId = undefined
+                }
                 io.to(roomId).emit("roomParticipants", rooms[roomId])
             }
         })

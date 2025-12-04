@@ -6,6 +6,7 @@ import routeRoutes from "./modules/routes/routes.routes"
 import raceRoutes from "./modules/race/race.routes"
 import locationRoutes from "./modules/locations/locations.routes"
 import runRoutes from "./modules/runs/run.routes"
+import groupRacesRoutes from "./modules/group-races/group-races.routes"
 
 const router = Router()
 
@@ -15,6 +16,7 @@ router.use("/routes", routeRoutes)
 router.use("/races", raceRoutes)
 router.use("/locations", locationRoutes)
 router.use("/runs", runRoutes)
+router.use("/group-races", groupRacesRoutes)
 
 router.get("/health", (_req, res) => {
     return res.status(200).send("OK")

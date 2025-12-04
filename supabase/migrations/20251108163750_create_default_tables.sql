@@ -59,3 +59,46 @@ CREATE TABLE IF NOT EXISTS locations (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_locations_participant_time ON locations (participant_id, timestamp DESC);
+-- GROUP RACES
+create table group_races (
+    id uuid primary key default gen_random_uuid(),
+    name text not null,
+    description text,
+    start_time timestamp not null,
+    end_time timestamp,
+    max_participants integer default 0,
+    route_id uuid references routes(id) on delete
+    set null,
+        created_by uuid references users(id) on delete
+    set null,
+        status text not null default 'upcoming',
+        created_at timestamp default now(),
+        updated_at timestamp default now()
+);
+-- GROUP RACE PARTICIPANTS
+create table race_participants (
+    id uuid primary key default gen_random_uuid(),
+    race_id uuid not null references group_races(id) on delete cascade,
+    user_id uuid not null references users(id) on delete cascade,
+    joined_at timestamp default now(),
+    unique(race_id, user_id)
+);
+-- GROUP RACE RESULTS
+create table race_results (
+    id uuid primary key default gen_random_uuid(),
+    race_id uuid not null references group_races(id) on delete cascade,
+    user_id uuid not null references users(id) on delete cascade,
+    finish_time interval,
+    position integer,
+    recorded_at timestamp default now(),
+    unique(race_id, user_id)
+);
+-- GROUP RACE TRACKING / LOCATIONS
+create table race_tracking (
+    id uuid primary key default gen_random_uuid(),
+    race_id uuid not null references group_races(id) on delete cascade,
+    user_id uuid not null references users(id) on delete cascade,
+    latitude double precision not null,
+    longitude double precision not null,
+    recorded_at timestamp default now()
+);
