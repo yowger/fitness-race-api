@@ -32,10 +32,16 @@ export const addResultSchema = z.object({
     position: z.number().int().optional(),
 })
 
+export const removeParticipantSchema = z.object({
+    race_id: z.string(),
+    user_id: z.string(),
+})
+
 const createRaceValidator = validator({ body: createRaceSchema })
 const addParticipantValidator = validator({ body: addParticipantSchema })
 const addTrackingValidator = validator({ body: addTrackingSchema })
 const addResultValidator = validator({ body: addResultSchema })
+const removeParticipantValidator = validator({ body: removeParticipantSchema })
 
 export const createRace = async (req: Request, res: Response) => {
     try {
@@ -87,6 +93,19 @@ export const addParticipant = async (req: Request, res: Response) => {
         const participant = await raceService.addParticipant(body)
 
         res.status(201).json(participant)
+    } catch (err) {
+        if (err instanceof Error) res.status(400).json({ error: err.message })
+    }
+}
+
+export const removeParticipant = async (req: Request, res: Response) => {
+    try {
+        const body = removeParticipantValidator.getBody(req)
+        const removed = await raceService.removeParticipant(body)
+        res.json({
+            message: "Successfully left the race.",
+            participant: removed,
+        })
     } catch (err) {
         if (err instanceof Error) res.status(400).json({ error: err.message })
     }

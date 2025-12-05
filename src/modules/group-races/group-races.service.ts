@@ -87,7 +87,6 @@ export const getRaceById = async (id: string) => {
                 created_by_user:users(id, full_name, email, avatar_url),
                 participants:race_participants (
                     id,
-                    user_id,
                     joined_at,
                     user:users (
                         id, full_name, email, avatar_url
@@ -118,6 +117,35 @@ export const addParticipant = async (input: AddParticipantInput) => {
     const { data, error } = await supabase
         .from("race_participants")
         .insert([input])
+        .select()
+        .single()
+
+    if (error) throw new Error(error.message)
+    return data
+}
+
+interface RemoveParticipantInput {
+    race_id: string
+    user_id: string
+}
+
+export const removeParticipant = async (input: RemoveParticipantInput) => {
+    const { data: existing, error: fetchError } = await supabase
+        .from("race_participants")
+        .select("*")
+        .eq("race_id", input.race_id)
+        .eq("user_id", input.user_id)
+        .single()
+
+    if (fetchError && fetchError.code !== "PGRST116")
+        throw new Error(fetchError.message)
+    if (!existing) throw new Error("You are not a participant in this race.")
+
+    const { data, error } = await supabase
+        .from("race_participants")
+        .delete()
+        .eq("race_id", input.race_id)
+        .eq("user_id", input.user_id)
         .select()
         .single()
 

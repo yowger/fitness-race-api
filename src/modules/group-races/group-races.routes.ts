@@ -11,6 +11,7 @@ router.get("/", asyncHandler(raceController.listRaces))
 router.get("/:id", asyncHandler(raceController.getRaceById))
 
 router.post("/participants", asyncHandler(raceController.addParticipant))
+router.delete("/participants", raceController.removeParticipant)
 router.get(
     "/:raceId/participants",
     asyncHandler(raceController.getParticipantsByRace)
