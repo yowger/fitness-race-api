@@ -40,7 +40,15 @@ export const getRouteById = async (req: Request, res: Response) => {
 
 export const createRoute = async (req: Request, res: Response) => {
     try {
-        const { name, description, distance, geojson, map_url } = getBody(req)
+        const {
+            name,
+            description,
+            distance,
+            geojson,
+            map_url,
+            start_address,
+            end_address,
+        } = getBody(req)
         const createdBy = req.user?.id
 
         const route = await routeService.createRoute({
@@ -49,6 +57,8 @@ export const createRoute = async (req: Request, res: Response) => {
             distance,
             geojson,
             map_url,
+            start_address,
+            end_address,
             createdBy,
         })
 

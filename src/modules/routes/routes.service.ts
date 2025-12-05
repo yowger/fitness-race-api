@@ -22,6 +22,8 @@ export interface CreateRouteInput {
     description?: string
     distance?: number
     geojson: FeatureCollection<LineString>
+    start_address?: string
+    end_address?: string
     map_url?: string
     createdBy?: string
 }
@@ -32,6 +34,8 @@ export interface RouteResponse {
     description?: string
     distance?: number
     geojson: FeatureCollection<LineString>
+    start_address?: string
+    end_address?: string
     map_url?: string
     created_by?: string
     created_at?: string
@@ -62,6 +66,8 @@ export const getRoutesPaginated = async (
             distance,
             geojson,
             map_url,
+            start_address,
+            end_address,
             created_by,
             created_at,
             users (
@@ -91,6 +97,8 @@ export const getRouteById = async (
             description,
             distance,
             geojson,
+            start_address,
+            end_address,
             map_url,
             created_by,
             created_at,
@@ -120,6 +128,8 @@ export const createRoute = async (
                 description: input.description,
                 distance: input.distance,
                 geojson: input.geojson,
+                start_address: input.start_address,
+                end_address: input.end_address,
                 map_url: input.map_url,
                 created_by: input.createdBy,
             },

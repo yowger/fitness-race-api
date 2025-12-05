@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS routes (
     description TEXT,
     distance NUMERIC,
     geojson JSONB,
+    start_address TEXT,
+    end_address TEXT,
     created_by UUID REFERENCES users(id) ON DELETE
     SET NULL,
         created_at TIMESTAMPTZ DEFAULT now()

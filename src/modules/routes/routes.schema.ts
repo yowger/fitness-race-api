@@ -5,5 +5,7 @@ export const createRouteSchema = z.object({
     description: z.string().optional(),
     distance: z.number().positive().optional(),
     geojson: z.any(),
+    start_address: z.string().optional(),
+    end_address: z.string().optional(),
     map_url: z.string().optional(),
 })
