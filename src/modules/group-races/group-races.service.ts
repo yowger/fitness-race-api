@@ -46,7 +46,8 @@ export const createRace = async (input: CreateRaceInput) => {
 export const getAllRaces = async (filters?: GetAllRacesFilters) => {
     let query = supabase.from("group_races").select(`
             *, 
-            routes(id, name, distance, map_url)
+            routes(id, name, distance, map_url),
+            created_by_user:users(id, full_name, email, avatar_url)
         `)
 
     if (filters?.name) {
@@ -81,9 +82,18 @@ export const getRaceById = async (id: string) => {
         .from("group_races")
         .select(
             `
-      *,
-      routes(*)
-    `
+                *,
+                routes(*),
+                created_by_user:users(id, full_name, email, avatar_url),
+                participants:race_participants (
+                    id,
+                    user_id,
+                    joined_at,
+                    user:users (
+                        id, full_name, email, avatar_url
+                )
+            )
+            `
         )
         .eq("id", id)
         .single()
@@ -93,6 +103,18 @@ export const getRaceById = async (id: string) => {
 }
 
 export const addParticipant = async (input: AddParticipantInput) => {
+    const { data: race, error: raceError } = await supabase
+        .from("group_races")
+        .select("created_by")
+        .eq("id", input.race_id)
+        .single()
+
+    if (raceError) throw new Error(raceError.message)
+
+    if (race.created_by === input.user_id) {
+        throw new Error("Host cannot join their own race.")
+    }
+
     const { data, error } = await supabase
         .from("race_participants")
         .insert([input])

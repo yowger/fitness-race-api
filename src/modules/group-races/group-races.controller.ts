@@ -41,6 +41,7 @@ export const createRace = async (req: Request, res: Response) => {
     try {
         const body = createRaceValidator.getBody(req)
         const created_by = req.user?.id
+
         const race = await raceService.createRace({ ...body, created_by })
         res.status(201).json(race)
     } catch (err) {
@@ -84,6 +85,7 @@ export const addParticipant = async (req: Request, res: Response) => {
     try {
         const body = addParticipantValidator.getBody(req)
         const participant = await raceService.addParticipant(body)
+
         res.status(201).json(participant)
     } catch (err) {
         if (err instanceof Error) res.status(400).json({ error: err.message })
