@@ -21,6 +21,9 @@ interface GetAllRacesFilters {
     status?: "upcoming" | "ongoing" | "finished"
     startDate?: string
     endDate?: string
+    userId?: string
+    limit?: number
+    offset?: number
 }
 
 export const createRace = async (input: CreateRaceInput) => {
@@ -45,11 +48,15 @@ export const createRace = async (input: CreateRaceInput) => {
 }
 
 export const getAllRaces = async (filters?: GetAllRacesFilters) => {
+    const limit = filters?.limit || 20
+    const offset = filters?.offset || 0
+
     let query = supabase.from("group_races").select(`
-            *, 
-            routes(id, name, distance, map_url),
-            created_by_user:users(id, full_name, email, avatar_url)
-        `)
+        *, 
+        routes(id, name, distance, map_url),
+        created_by_user:users(id, full_name, email, avatar_url),
+        participants:race_participants(user_id)
+    `)
 
     if (filters?.name) {
         query = query.ilike("name", `%${filters.name}%`)
@@ -71,7 +78,13 @@ export const getAllRaces = async (filters?: GetAllRacesFilters) => {
             query = query.lt("end_time", now)
     }
 
+    if (filters?.userId) {
+        query = query.eq("race_participants.user_id", filters.userId)
+    }
+
     query = query.order("start_time", { ascending: false })
+
+    query = query.range(offset, offset + limit - 1)
 
     const { data, error } = await query
     if (error) throw new Error(error.message)
@@ -89,6 +102,7 @@ export const getRaceById = async (id: string) => {
                 participants:race_participants (
                     id,
                     joined_at,
+                    bib_number,
                     user:users (
                         id, full_name, email, avatar_url
                 )
