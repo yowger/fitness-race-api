@@ -17,11 +17,12 @@ interface AddParticipantInput {
 }
 
 interface GetAllRacesFilters {
+    userId?: string
     name?: string
+    createdBy?: string
     status?: "upcoming" | "ongoing" | "finished"
     startDate?: string
     endDate?: string
-    userId?: string
     limit?: number
     offset?: number
 }
@@ -70,16 +71,33 @@ export const getAllRaces = async (filters?: GetAllRacesFilters) => {
     }
 
     if (filters?.status) {
-        const now = new Date().toISOString()
-        if (filters.status === "upcoming") query = query.gt("start_time", now)
-        else if (filters.status === "ongoing")
-            query = query.gte("start_time", now).lte("end_time", now)
-        else if (filters.status === "finished")
-            query = query.lt("end_time", now)
+        const now = new Date()
+        if (filters.status === "upcoming") {
+            const yesterday = new Date(
+                now.getTime() - 24 * 60 * 60 * 1000
+            ).toISOString()
+            query = query.eq("status", "upcoming").gte("start_time", yesterday)
+        } else if (filters.status === "ongoing") {
+            query = query.eq("status", "ongoing")
+        } else if (filters.status === "finished") {
+            query = query
+                .eq("status", "finished")
+                .lt("end_time", now.toISOString())
+        }
     }
 
     if (filters?.userId) {
-        query = query.eq("race_participants.user_id", filters.userId)
+        const { data: participantRaces } = await supabase
+            .from("race_participants")
+            .select("race_id")
+            .eq("user_id", filters.userId)
+
+        const raceIds = participantRaces?.map((r) => r.race_id) || []
+        query = query.in("id", raceIds)
+    }
+
+    if (filters?.createdBy) {
+        query = query.eq("created_by", filters.createdBy)
     }
 
     query = query.order("start_time", { ascending: false })

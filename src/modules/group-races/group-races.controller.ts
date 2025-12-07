@@ -58,16 +58,19 @@ export const createRace = async (req: Request, res: Response) => {
 export const listRaces = async (req: Request, res: Response) => {
     try {
         const {
+            userId,
+            createdBy,
             name,
             status,
             startDate,
             endDate,
-            userId,
             limit = 20,
             offset = 0,
         } = req.query
 
         const filters = {
+            userId: typeof userId === "string" ? userId : undefined,
+            createdBy: typeof createdBy === "string" ? createdBy : undefined,
             name: typeof name === "string" ? name : undefined,
             status:
                 typeof status === "string"
@@ -75,7 +78,6 @@ export const listRaces = async (req: Request, res: Response) => {
                     : undefined,
             startDate: typeof startDate === "string" ? startDate : undefined,
             endDate: typeof endDate === "string" ? endDate : undefined,
-            userId: typeof userId === "string" ? userId : undefined,
             limit: typeof limit === "string" ? parseInt(limit) : undefined,
             offset: typeof offset === "string" ? parseInt(offset) : undefined,
         }
