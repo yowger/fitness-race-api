@@ -13,6 +13,7 @@ interface CreateRaceInput {
 interface AddParticipantInput {
     race_id: string
     user_id: string
+    bib?: number
 }
 
 interface GetAllRacesFilters {
@@ -109,14 +110,44 @@ export const addParticipant = async (input: AddParticipantInput) => {
         .single()
 
     if (raceError) throw new Error(raceError.message)
-
     if (race.created_by === input.user_id) {
         throw new Error("Host cannot join their own race.")
     }
 
+    let bibNumber: number
+
+    if (input.bib) {
+        const { data: existingBib, error: existingBibError } = await supabase
+            .from("race_participants")
+            .select("id")
+            .eq("race_id", input.race_id)
+            .eq("bib_number", input.bib)
+            .single()
+
+        if (existingBibError && existingBibError.code !== "PGRST116")
+            throw new Error(existingBibError.message)
+        if (existingBib)
+            throw new Error(`Bib number ${input.bib} is already taken.`)
+
+        bibNumber = input.bib
+    } else {
+        const { data: maxBibData, error: maxBibError } = await supabase
+            .from("race_participants")
+            .select("bib_number")
+            .eq("race_id", input.race_id)
+            .order("bib_number", { ascending: false })
+            .limit(1)
+            .single()
+
+        if (maxBibError && maxBibError.code !== "PGRST116")
+            throw new Error(maxBibError.message)
+
+        bibNumber = maxBibData?.bib_number ? maxBibData.bib_number + 1 : 1
+    }
+
     const { data, error } = await supabase
         .from("race_participants")
-        .insert([input])
+        .insert([{ ...input, bib_number: bibNumber }])
         .select()
         .single()
 

@@ -82,6 +82,7 @@ create table race_participants (
     id uuid primary key default gen_random_uuid(),
     race_id uuid not null references group_races(id) on delete cascade,
     user_id uuid not null references users(id) on delete cascade,
+    bib_number INTEGER,
     joined_at timestamp default now(),
     unique(race_id, user_id)
 );
