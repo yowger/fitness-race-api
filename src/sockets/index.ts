@@ -123,13 +123,17 @@ import { Server as HttpServer } from "http"
 import { supabase } from "../config/supabase"
 
 const raceRooms: Record<string, boolean> = {}
-const onlineParticipants: Record<
-    string,
-    { userId: string; socketId: string }[]
-> = {}
+
+interface OnlineUser {
+    userId: string
+    socketId: string
+    role: "admin" | "racer" | "guest"
+}
+
+const onlineParticipants: Record<string, OnlineUser[]> = {}
 
 function getOnline(raceId: string) {
-    return onlineParticipants[raceId]?.map((p) => p.userId) || []
+    return onlineParticipants[raceId] || []
 }
 
 async function loadActiveRaces() {
@@ -139,7 +143,7 @@ async function loadActiveRaces() {
 
     if (!error && data) {
         data.forEach((race) => {
-            if (race.status === "upcoming" || race.status === "ongoing") {
+            if (["upcoming", "ongoing"].includes(race.status)) {
                 raceRooms[race.id] = true
                 console.log("Restored race room:", race.id)
             }
@@ -166,51 +170,62 @@ export const initSocket = (server: HttpServer) => {
             socket.emit("raceCreated", { raceId })
         })
 
-        socket.on("joinRace", async ({ raceId, userId }) => {
-            if (
-                onlineParticipants[raceId]?.some(
-                    (p) => p.socketId === socket.id
+        socket.on(
+            "joinRace",
+            async ({
+                raceId,
+                userId,
+                isGuest,
+            }: {
+                raceId: string
+                userId: string
+                isGuest?: boolean
+            }) => {
+                if (
+                    onlineParticipants[raceId]?.some(
+                        (p) => p.socketId === socket.id
+                    )
                 )
-            ) {
-                return
-            }
+                    return
 
-            const { data: race } = await supabase
-                .from("races")
-                .select("created_by_user_id")
-                .eq("id", raceId)
-                .single()
+                const { data: race } = await supabase
+                    .from("races")
+                    .select("created_by_user_id")
+                    .eq("id", raceId)
+                    .single()
 
-            const { data: participant } = await supabase
-                .from("race_participants")
-                .select("id")
-                .eq("race_id", raceId)
-                .eq("user_id", userId)
-                .single()
+                const isAdmin = userId === race?.created_by_user_id
 
-            const isAdmin = userId === race?.created_by_user_id
-            if (!participant && !isAdmin) {
-                socket.emit("notAllowed")
-                return
-            }
+                let participant = null
+                if (!isAdmin) {
+                    const { data } = await supabase
+                        .from("race_participants")
+                        .select("id")
+                        .eq("race_id", raceId)
+                        .eq("user_id", userId)
+                        .single()
+                    participant = data
+                }
 
-            socket.join(raceId)
+                const role: "admin" | "racer" | "guest" = isAdmin
+                    ? "admin"
+                    : participant
+                      ? "racer"
+                      : "guest"
 
-            if (participant) {
+                socket.join(raceId)
+
                 if (!onlineParticipants[raceId]) onlineParticipants[raceId] = []
 
-                if (
-                    !onlineParticipants[raceId].some((p) => p.userId === userId)
-                ) {
-                    onlineParticipants[raceId].push({
-                        userId,
-                        socketId: socket.id,
-                    })
-                }
-            }
+                onlineParticipants[raceId].push({
+                    userId,
+                    socketId: socket.id,
+                    role,
+                })
 
-            io.to(raceId).emit("onlineParticipants", getOnline(raceId))
-        })
+                io.to(raceId).emit("onlineParticipants", getOnline(raceId))
+            }
+        )
 
         socket.on("leaveRace", ({ raceId, userId }) => {
             if (!onlineParticipants[raceId]) return
