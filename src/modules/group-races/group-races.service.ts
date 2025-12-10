@@ -27,6 +27,43 @@ interface GetAllRacesFilters {
     offset?: number
 }
 
+export interface RaceRoute {
+    id: string
+    name: string
+    distance?: number
+    map_url?: string
+}
+
+export interface RaceCreator {
+    id: string
+    full_name: string
+    email: string
+    avatar_url?: string | null
+}
+
+export interface RaceParticipant {
+    user_id: string
+    bib_number?: number
+    joined_at?: string
+}
+
+export interface Race {
+    id: string
+    name: string
+    description?: string | null
+    start_time: string
+    end_time?: string | null
+    max_participants: number
+    route_id?: string | null
+    routes?: RaceRoute | null
+    created_by?: string | null
+    created_by_user?: RaceCreator | null
+    participants: RaceParticipant[]
+    status: "upcoming" | "ongoing" | "finished"
+    created_at: string
+    updated_at: string
+}
+
 export const createRace = async (input: CreateRaceInput) => {
     const { data, error } = await supabase
         .from("group_races")
@@ -48,7 +85,9 @@ export const createRace = async (input: CreateRaceInput) => {
     return data
 }
 
-export const getAllRaces = async (filters?: GetAllRacesFilters) => {
+export const getAllRaces = async (
+    filters?: GetAllRacesFilters
+): Promise<Race[]> => {
     const limit = filters?.limit || 20
     const offset = filters?.offset || 0
 
@@ -73,10 +112,11 @@ export const getAllRaces = async (filters?: GetAllRacesFilters) => {
     if (filters?.status) {
         const now = new Date()
         if (filters.status === "upcoming") {
-            const yesterday = new Date(
-                now.getTime() - 24 * 60 * 60 * 1000
-            ).toISOString()
-            query = query.eq("status", "upcoming").gte("start_time", yesterday)
+            // const yesterday = new Date(
+            //     now.getTime() - 24 * 60 * 60 * 1000
+            // ).toISOString()
+            query = query.eq("status", "upcoming")
+            // .gte("start_time", yesterday)
         } else if (filters.status === "ongoing") {
             query = query.eq("status", "ongoing")
         } else if (filters.status === "finished") {
