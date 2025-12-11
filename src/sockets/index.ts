@@ -128,6 +128,9 @@ interface OnlineUser {
     userId: string
     socketId: string
     role: "admin" | "racer" | "guest"
+    coords?: [number, number]
+    lastUpdate?: number
+    speed?: number
 }
 
 const onlineParticipants: Record<string, OnlineUser[]> = {}
@@ -248,6 +251,48 @@ export const initSocket = (server: HttpServer) => {
                 io.to(raceId).emit("onlineParticipants", getOnline(raceId))
             }
         })
+
+        socket.on(
+            "race-started",
+            async ({ raceId, startedBy, actualStartTime }) => {
+                console.log(`Race started: ${raceId} by ${startedBy}`)
+
+                io.to(raceId).emit("raceStatusUpdate", {
+                    status: "ongoing",
+                    actualStartTime,
+                })
+            }
+        )
+
+        socket.on("race-ended", async ({ raceId, endedBy, actualEndTime }) => {
+            console.log(`Race ended: ${raceId} by ${endedBy}`)
+
+            io.to(raceId).emit("raceStatusUpdate", {
+                status: "finished",
+                actualEndTime,
+            })
+        })
+
+        socket.on(
+            "participantUpdate",
+            ({ raceId, userId, coords, timestamp, speed }) => {
+                const participant = onlineParticipants[raceId]?.find(
+                    (p) => p.userId === userId
+                )
+                if (participant) {
+                    participant.coords = coords
+                    participant.lastUpdate = timestamp
+                    participant.speed = speed
+                }
+
+                io.to(raceId).emit("participantUpdate", {
+                    userId,
+                    coords,
+                    timestamp,
+                    speed,
+                })
+            }
+        )
     })
 
     return io
