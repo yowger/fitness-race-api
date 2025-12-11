@@ -184,3 +184,25 @@ export const getResultsByRace = async (req: Request, res: Response) => {
         if (err instanceof Error) res.status(400).json({ error: err.message })
     }
 }
+
+export const startRace = async (req: Request, res: Response) => {
+    try {
+        const { raceId } = req.params
+        const userId = req.user?.id
+        const race = await raceService.startRace(raceId, userId!)
+        res.json(race)
+    } catch (err) {
+        res.status(400).json({ error: (err as Error).message })
+    }
+}
+
+export const endRace = async (req: Request, res: Response) => {
+    try {
+        const { raceId } = req.params
+        const userId = req.user?.id
+        const race = await raceService.endRace(raceId, userId!)
+        res.json(race)
+    } catch (err) {
+        res.status(400).json({ error: (err as Error).message })
+    }
+}

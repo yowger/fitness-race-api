@@ -175,12 +175,12 @@ export const initSocket = (server: HttpServer) => {
             async ({
                 raceId,
                 userId,
-                isGuest,
             }: {
                 raceId: string
                 userId: string
                 isGuest?: boolean
             }) => {
+                console.log("🚀 ~ initSocket ~ userId:", userId, raceId)
                 if (
                     onlineParticipants[raceId]?.some(
                         (p) => p.socketId === socket.id

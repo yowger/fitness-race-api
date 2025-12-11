@@ -350,3 +350,57 @@ export const getResultsByRace = async (raceId: string) => {
     if (error) throw new Error(error.message)
     return data
 }
+
+export const startRace = async (raceId: string, userId: string) => {
+    const { data: race, error: raceError } = await supabase
+        .from("group_races")
+        .select("created_by, status")
+        .eq("id", raceId)
+        .single()
+
+    if (raceError) throw new Error(raceError.message)
+    if (!race) throw new Error("Race not found")
+    if (race.created_by !== userId)
+        throw new Error("Only host can start the race")
+    if (race.status !== "upcoming") throw new Error("Race already started")
+
+    const { data, error } = await supabase
+        .from("group_races")
+        .update({
+            actual_start_time: new Date().toISOString(),
+            status: "ongoing",
+        })
+        .eq("id", raceId)
+        .select()
+        .single()
+
+    if (error) throw new Error(error.message)
+    return data
+}
+
+export const endRace = async (raceId: string, userId: string) => {
+    const { data: race, error: raceError } = await supabase
+        .from("group_races")
+        .select("created_by, status")
+        .eq("id", raceId)
+        .single()
+
+    if (raceError) throw new Error(raceError.message)
+    if (!race) throw new Error("Race not found")
+    if (race.created_by !== userId)
+        throw new Error("Only host can end the race")
+    if (race.status !== "ongoing") throw new Error("Race is not ongoing")
+
+    const { data, error } = await supabase
+        .from("group_races")
+        .update({
+            actual_end_time: new Date().toISOString(),
+            status: "finished",
+        })
+        .eq("id", raceId)
+        .select()
+        .single()
+
+    if (error) throw new Error(error.message)
+    return data
+}

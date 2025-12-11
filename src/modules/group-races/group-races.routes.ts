@@ -27,4 +27,7 @@ router.get(
 router.post("/results", asyncHandler(raceController.addResult))
 router.get("/:raceId/results", asyncHandler(raceController.getResultsByRace))
 
+router.post("/races/:raceId/start", authMiddleware, raceController.startRace)
+router.post("/races/:raceId/end", authMiddleware, raceController.endRace)
+
 export default router

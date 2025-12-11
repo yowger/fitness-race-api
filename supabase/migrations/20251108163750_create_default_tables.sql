@@ -68,6 +68,8 @@ create table group_races (
     description text,
     start_time timestamp not null,
     end_time timestamp,
+    actual_start_time timestamp,
+    actual_end_time timestamp,
     max_participants integer default 0,
     route_id uuid references routes(id) on delete
     set null,
