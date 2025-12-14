@@ -93,7 +93,7 @@ create table race_results (
     id uuid primary key default gen_random_uuid(),
     race_id uuid not null references group_races(id) on delete cascade,
     user_id uuid not null references users(id) on delete cascade,
-    finish_time interval,
+    finish_time BIGINT,
     position integer,
     recorded_at timestamp default now(),
     unique(race_id, user_id)

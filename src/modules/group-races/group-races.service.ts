@@ -120,9 +120,7 @@ export const getAllRaces = async (
         } else if (filters.status === "ongoing") {
             query = query.eq("status", "ongoing")
         } else if (filters.status === "finished") {
-            query = query
-                .eq("status", "finished")
-                .lt("end_time", now.toISOString())
+            query = query.eq("status", "finished")
         }
     }
 
