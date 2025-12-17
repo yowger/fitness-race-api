@@ -24,7 +24,12 @@ router.get(
     asyncHandler(raceController.getLatestTracking)
 )
 
-router.post("/results", asyncHandler(raceController.addResult))
+router.post("/results", authMiddleware, asyncHandler(raceController.addResult))
+router.post(
+    "/results/publish",
+    authMiddleware,
+    asyncHandler(raceController.publishRaceResults)
+)
 router.get("/:raceId/results", asyncHandler(raceController.getResultsByRace))
 
 router.post("/:raceId/start", authMiddleware, raceController.startRace)

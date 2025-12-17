@@ -96,6 +96,7 @@ create table race_results (
     finish_time BIGINT,
     position integer,
     recorded_at timestamp default now(),
+    status text,
     unique(race_id, user_id)
 );
 -- GROUP RACE TRACKING / LOCATIONS

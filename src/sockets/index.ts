@@ -271,3 +271,11 @@ export const initSocket = (server: HttpServer) => {
 
     return io
 }
+
+/*
+type RaceResultStatus =
+  | "finished"
+  | "dnf"   // started but didn’t finish
+  | "dns"   // registered but never started
+  | "dsq"  
+*/

@@ -37,11 +37,32 @@ export const removeParticipantSchema = z.object({
     user_id: z.string(),
 })
 
+const raceResultStatusEnum = z.enum([
+    "Finished",
+    "DNF",
+    "DNS",
+    "Disqualified",
+    "Did Not Join",
+])
+
+export const publishResultsSchema = z.object({
+    race_id: z.string(),
+    results: z.array(
+        z.object({
+            user_id: z.string(),
+            position: z.number().int().nullable().optional(),
+            status: raceResultStatusEnum.optional(),
+            finish_time: z.number().nullable().optional(),
+        })
+    ),
+})
+
 const createRaceValidator = validator({ body: createRaceSchema })
 const addParticipantValidator = validator({ body: addParticipantSchema })
 const addTrackingValidator = validator({ body: addTrackingSchema })
 const addResultValidator = validator({ body: addResultSchema })
 const removeParticipantValidator = validator({ body: removeParticipantSchema })
+const publishResultsValidator = validator({ body: publishResultsSchema })
 
 export const createRace = async (req: Request, res: Response) => {
     try {
@@ -204,5 +225,26 @@ export const endRace = async (req: Request, res: Response) => {
         res.json(race)
     } catch (err) {
         res.status(400).json({ error: (err as Error).message })
+    }
+}
+
+export const publishRaceResults = async (req: Request, res: Response) => {
+    try {
+        const body = publishResultsValidator.getBody(req)
+        const userId = req.user?.id
+
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized" })
+        }
+
+        await raceService.publishRaceResults(body.results, body.race_id, userId)
+
+        res.json({
+            message: "Race results published and race marked as complete.",
+        })
+    } catch (err) {
+        res.status(400).json({
+            error: (err as Error).message,
+        })
     }
 }

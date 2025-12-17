@@ -59,7 +59,7 @@ export interface Race {
     created_by?: string | null
     created_by_user?: RaceCreator | null
     participants: RaceParticipant[]
-    status: "upcoming" | "ongoing" | "finished"
+    status: "upcoming" | "ongoing" | "finished" | "complete"
     created_at: string
     updated_at: string
 }
@@ -294,16 +294,37 @@ export const addTracking = async (input: AddTrackingInput) => {
 export const getTrackingByRace = async (raceId: string, userId?: string) => {
     let query = supabase
         .from("race_tracking")
-        .select("*")
+        .select(
+            `
+            *,
+            users ( full_name )
+        `
+        )
         .eq("race_id", raceId)
         .order("recorded_at", { ascending: true })
 
     if (userId) query = query.eq("user_id", userId)
 
-    const { data, error } = await query
+    const { data: tracking, error: trackingError } = await query
+    if (trackingError) throw new Error(trackingError.message)
+    if (!tracking) return []
 
-    if (error) throw new Error(error.message)
-    return data
+    const { data: participants, error: participantsError } = await supabase
+        .from("race_participants")
+        .select("user_id, bib_number")
+        .eq("race_id", raceId)
+
+    if (participantsError) throw new Error(participantsError.message)
+
+    const merged = tracking.map((t) => {
+        const p = participants?.find((p) => p.user_id === t.user_id)
+        return {
+            ...t,
+            bib_number: p?.bib_number ?? 0,
+        }
+    })
+
+    return merged
 }
 
 export const getLatestTracking = async (raceId: string, userId: string) => {
@@ -339,14 +360,41 @@ export const addResult = async (input: AddResultInput) => {
 }
 
 export const getResultsByRace = async (raceId: string) => {
-    const { data, error } = await supabase
+    const { data: results, error: resultsError } = await supabase
         .from("race_results")
-        .select("*, users(id, name, email)")
+        .select("*, users(id, full_name, email)")
         .eq("race_id", raceId)
-        .order("position", { ascending: true })
 
-    if (error) throw new Error(error.message)
-    return data
+    if (resultsError) throw new Error(resultsError.message)
+
+    const { data: participants, error: participantsError } = await supabase
+        .from("race_participants")
+        .select("user_id, bib_number, users(id, full_name, email)")
+        .eq("race_id", raceId)
+
+    if (participantsError) throw new Error(participantsError.message)
+
+    const merged = participants.map((p) => {
+        const r = results.find((r) => r.user_id === p.user_id)
+
+        return {
+            race_id: raceId,
+            user_id: p.user_id,
+            bib_number: p.bib_number,
+            users: r?.users ?? p.users,
+            finish_time: r?.finish_time ?? null,
+            status: r ? "Finished" : "DNF",
+            position: r?.position ?? null,
+        }
+    })
+
+    const sorted = merged.sort((a, b) => {
+        if (a.finish_time == null) return 1
+        if (b.finish_time == null) return -1
+        return a.finish_time - b.finish_time
+    })
+
+    return sorted
 }
 
 export const startRace = async (raceId: string, userId: string) => {
@@ -401,4 +449,77 @@ export const endRace = async (raceId: string, userId: string) => {
 
     if (error) throw new Error(error.message)
     return data
+}
+
+export const completeRace = async (raceId: string, userId: string) => {
+    const { data: race, error: raceError } = await supabase
+        .from("group_races")
+        .select("created_by, status")
+        .eq("id", raceId)
+        .single()
+
+    if (raceError) throw raceError
+    if (!race) throw new Error("Race not found")
+    if (race.created_by !== userId)
+        throw new Error("Only host can complete the race")
+
+    if (race.status !== "finished")
+        throw new Error("Race must be finished before completing")
+
+    const { error } = await supabase
+        .from("group_races")
+        .update({
+            status: "complete",
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", raceId)
+
+    if (error) throw error
+}
+
+type RaceResultStatus =
+    | "Finished"
+    | "DNF"
+    | "DNS"
+    | "Disqualified"
+    | "Did Not Join"
+
+interface UpdateResultBatchInput {
+    user_id: string
+    position?: number | null
+    status?: RaceResultStatus
+    finish_time?: number | null
+}
+
+export const publishRaceResults = async (
+    updates: UpdateResultBatchInput[],
+    raceId: string,
+    userId: string
+) => {
+    const payload = updates.map((u) => ({
+        race_id: raceId,
+        user_id: u.user_id,
+        position: u.position ?? null,
+        status: u.status,
+        finish_time: u.finish_time ?? null,
+    }))
+
+    const { error: resultsError } = await supabase
+        .from("race_results")
+        .upsert(payload, {
+            onConflict: "race_id,user_id",
+        })
+
+    if (resultsError) throw resultsError
+
+    const { error: raceError } = await supabase
+        .from("group_races")
+        .update({
+            status: "complete",
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", raceId)
+        .eq("created_by", userId)
+
+    if (raceError) throw raceError
 }
