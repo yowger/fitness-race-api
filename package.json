@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "dev": "tsx --watch src/index.ts",
-        "start": "node dist/src/index.js",
+        "start": "node dist/index.js",
         "build": "tsc",
         "lint": "eslint .",
         "lint:fix": "eslint --fix .",
@@ -15,7 +15,6 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
-    "type": "module",
     "devDependencies": {
         "@eslint/js": "^9.38.0",
         "@types/cors": "^2.8.19",
