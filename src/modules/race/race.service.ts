@@ -5,6 +5,7 @@ interface CreateRaceInput {
     description?: string
     start_time: string
     end_time?: string
+    banner_url?: string
     route_id?: string
     created_by?: string
 }
@@ -19,6 +20,7 @@ export const getAllRaces = async () => {
             description,
             start_time,
             end_time,
+            banner_url,
             route_id,
             created_by,
             created_at,
@@ -41,6 +43,7 @@ export const getRaceById = async (id: string) => {
             description,
             start_time,
             end_time,
+            banner_url,
             route_id,
             created_by,
             created_at,
@@ -61,6 +64,7 @@ export const createRace = async (input: CreateRaceInput) => {
             {
                 name: input.name,
                 description: input.description,
+                banner_url: input.banner_url,
                 start_time: input.start_time,
                 end_time: input.end_time,
                 route_id: input.route_id,

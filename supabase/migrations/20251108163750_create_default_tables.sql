@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS races (
     description TEXT,
     start_time TIMESTAMPTZ NOT NULL,
     end_time TIMESTAMPTZ,
+    banner_url TEXT,
     route_id UUID REFERENCES routes(id) ON DELETE
     SET NULL,
         created_by UUID REFERENCES users(id) ON DELETE

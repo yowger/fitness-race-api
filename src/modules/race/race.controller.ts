@@ -6,9 +6,10 @@ import * as raceService from "./race.service"
 const createRaceSchema = z.object({
     name: z.string().min(1, "Race name is required"),
     description: z.string().optional(),
+    banner_url: z.url("Invalid banner URL").optional(),
     start_time: z.string().datetime("Invalid start time format"),
     end_time: z.string().datetime().optional(),
-    route_id: z.string().uuid("Invalid route ID").optional(),
+    route_id: z.string("Invalid route ID").optional(),
 })
 
 const { getBody } = validator({ body: createRaceSchema })
@@ -43,13 +44,20 @@ export const getRaceById = async (req: Request, res: Response) => {
 
 export const createRace = async (req: Request, res: Response) => {
     try {
-        const { name, description, start_time, end_time, route_id } =
-            getBody(req)
+        const {
+            name,
+            description,
+            banner_url,
+            start_time,
+            end_time,
+            route_id,
+        } = getBody(req)
         const created_by = req.user?.id
 
         const race = await raceService.createRace({
             name,
             description,
+            banner_url,
             start_time,
             end_time,
             route_id,
