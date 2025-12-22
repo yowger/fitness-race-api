@@ -35,6 +35,20 @@ CREATE TABLE IF NOT EXISTS races (
     SET NULL,
         created_at TIMESTAMPTZ DEFAULT now()
 );
+-- RACE EVENTS
+CREATE TABLE IF NOT EXISTS race_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    race_id UUID NOT NULL REFERENCES group_races(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    -- e.g. "Registration Opens", "Race Start"
+    scheduled_time TIMESTAMPTZ NOT NULL,
+    actual_time TIMESTAMPTZ,
+    -- optional, if event happens at a different time
+    type TEXT,
+    -- optional: "registration", "race", "awards", "other"
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
 -- RACE PARTICIPANTS (many-to-many between users and races)
 CREATE TABLE IF NOT EXISTS race_participants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
