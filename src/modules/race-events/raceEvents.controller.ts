@@ -6,7 +6,7 @@ import * as raceEventsService from "./raceEvents.service"
 const createRaceEventSchema = z.object({
     race_id: z.string().uuid("Invalid race ID"),
     name: z.string().min(1, "Event name is required"),
-    scheduled_time: z.string().datetime("Invalid scheduled time"),
+    scheduled_time: z.string("Invalid scheduled time"),
     type: z.enum(["registration", "race", "awards", "other"]).optional(),
     description: z.string().optional(),
 })

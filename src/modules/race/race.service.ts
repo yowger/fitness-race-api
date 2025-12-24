@@ -3,6 +3,7 @@ import { supabase } from "../../config/supabase"
 interface CreateRaceInput {
     name: string
     description?: string
+    price?: number
     start_time: string
     end_time?: string
     banner_url?: string
@@ -18,6 +19,7 @@ export const getAllRaces = async () => {
             id,
             name,
             description,
+            price,
             start_time,
             end_time,
             banner_url,
@@ -44,6 +46,7 @@ export const getRaceById = async (id: string) => {
             start_time,
             end_time,
             banner_url,
+            price,
             route_id,
             created_by,
             created_at,
@@ -64,6 +67,7 @@ export const createRace = async (input: CreateRaceInput) => {
             {
                 name: input.name,
                 description: input.description,
+                price: input.price,
                 banner_url: input.banner_url,
                 start_time: input.start_time,
                 end_time: input.end_time,
