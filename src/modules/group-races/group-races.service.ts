@@ -534,27 +534,41 @@ interface UpdateBibInput {
     bib_number: number
 }
 
-export const updateParticipantBib = async (input: UpdateBibInput) => {
-    const { data: existingBib, error: existingBibError } = await supabase
+export const updateParticipantBib = async (params: {
+    race_id: string
+    user_id: string
+    bib_number: number
+}) => {
+    const { race_id, user_id, bib_number } = params
+    console.log("🚀 ~ updateParticipantBib ~ bib_number:", bib_number)
+    console.log("🚀 ~ updateParticipantBib ~ user_id:", user_id)
+    console.log("🚀 ~ updateParticipantBib ~ race_id:", race_id)
+
+    const { data: existing, error: existingError } = await supabase
         .from("race_participants")
-        .select("user_id")
-        .eq("race_id", input.race_id)
-        .eq("bib_number", input.bib_number)
-        .single()
+        .select("id")
+        .eq("race_id", race_id)
+        .eq("bib_number", bib_number)
+        .maybeSingle()
 
-    if (existingBibError && existingBibError.code !== "PGRST116")
-        throw new Error(existingBibError.message)
-
-    if (existingBib && existingBib.user_id !== input.user_id)
-        throw new Error(`Bib number ${input.bib_number} is already taken.`)
+    if (existing) {
+        console.log("🚀 ~ updateParticipantBib ~ existing:", existing)
+        throw new Error(`Bib number ${bib_number} is already assigned`)
+    }
+    if (existingError) {
+        console.log("🚀 ~ updateParticipantBib ~ existingError:", existingError)
+        throw new Error(existingError.message)
+    }
 
     const { data, error } = await supabase
         .from("race_participants")
-        .update({ bib_number: input.bib_number })
-        .eq("race_id", input.race_id)
-        .eq("user_id", input.user_id)
+        .update({ bib_number })
+        .eq("race_id", race_id)
+        .eq("user_id", user_id)
         .select()
-        .single()
+        .maybeSingle()
+
+    console.log("🚀 ~ updateParticipantBib ~ data:", data)
 
     if (error) throw new Error(error.message)
     return data
