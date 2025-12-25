@@ -2,6 +2,8 @@ import { supabase } from "../../config/supabase"
 
 interface CreateRaceInput {
     name: string
+    price?: number
+    banner_url?: string
     description?: string
     start_time: string
     end_time?: string
@@ -70,6 +72,8 @@ export const createRace = async (input: CreateRaceInput) => {
         .insert([
             {
                 name: input.name,
+                price: input.price,
+                banner_url: input.banner_url,
                 description: input.description,
                 start_time: input.start_time,
                 end_time: input.end_time,
@@ -522,4 +526,36 @@ export const publishRaceResults = async (
         .eq("created_by", userId)
 
     if (raceError) throw raceError
+}
+
+interface UpdateBibInput {
+    race_id: string
+    user_id: string
+    bib_number: number
+}
+
+export const updateParticipantBib = async (input: UpdateBibInput) => {
+    const { data: existingBib, error: existingBibError } = await supabase
+        .from("race_participants")
+        .select("user_id")
+        .eq("race_id", input.race_id)
+        .eq("bib_number", input.bib_number)
+        .single()
+
+    if (existingBibError && existingBibError.code !== "PGRST116")
+        throw new Error(existingBibError.message)
+
+    if (existingBib && existingBib.user_id !== input.user_id)
+        throw new Error(`Bib number ${input.bib_number} is already taken.`)
+
+    const { data, error } = await supabase
+        .from("race_participants")
+        .update({ bib_number: input.bib_number })
+        .eq("race_id", input.race_id)
+        .eq("user_id", input.user_id)
+        .select()
+        .single()
+
+    if (error) throw new Error(error.message)
+    return data
 }

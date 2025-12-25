@@ -6,8 +6,8 @@ import * as raceService from "./race.service"
 const createRaceSchema = z.object({
     name: z.string().min(1, "Race name is required"),
     price: z.number().min(0, "Price must be 0 or greater").optional(),
+    banner_url: z.string("Invalid banner URL").optional(),
     description: z.string().optional(),
-    banner_url: z.url("Invalid banner URL").optional(),
     start_time: z.string().datetime("Invalid start time format"),
     end_time: z.string().datetime().optional(),
     route_id: z.string("Invalid route ID").optional(),
@@ -54,6 +54,9 @@ export const createRace = async (req: Request, res: Response) => {
             end_time,
             route_id,
         } = getBody(req)
+        console.log("hit me")
+        console.log("🚀 ~ createRace ~ banner_url:", banner_url)
+
         const created_by = req.user?.id
 
         const race = await raceService.createRace({

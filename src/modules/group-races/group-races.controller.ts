@@ -5,6 +5,8 @@ import * as raceService from "./group-races.service"
 
 export const createRaceSchema = z.object({
     name: z.string().min(1, "Race name is required"),
+    price: z.number().min(0, "Price must be 0 or greater").optional(),
+    banner_url: z.string("Invalid banner URL").optional(),
     description: z.string().optional(),
     start_time: z.string("Invalid start time format"),
     end_time: z.string().optional(),
@@ -246,5 +248,35 @@ export const publishRaceResults = async (req: Request, res: Response) => {
         res.status(400).json({
             error: (err as Error).message,
         })
+    }
+}
+
+export const updateBibSchema = z.object({
+    race_id: z.string(),
+    user_id: z.string(),
+    bib_number: z.number().int().min(1, "Bib number must be 1 or greater"),
+})
+
+const updateBibValidator = validator({ body: updateBibSchema })
+
+export const updateParticipantBibController = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const body = updateBibValidator.getBody(req)
+
+        const updatedParticipant = await raceService.updateParticipantBib({
+            race_id: body.race_id,
+            user_id: body.user_id,
+            bib_number: body.bib_number,
+        })
+
+        res.json({
+            message: "Bib number updated successfully.",
+            participant: updatedParticipant,
+        })
+    } catch (err) {
+        res.status(400).json({ error: (err as Error).message })
     }
 }
