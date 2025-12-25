@@ -16,6 +16,7 @@ router.get(
     "/:raceId/participants",
     asyncHandler(raceController.getParticipantsByRace)
 )
+router.patch("/participants/bib", raceController.updateParticipantBibController)
 
 router.post("/tracking", asyncHandler(raceController.addTracking))
 router.get("/:raceId/tracking", asyncHandler(raceController.getTrackingByRace))
