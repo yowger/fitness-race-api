@@ -16,6 +16,11 @@ export const getProfile = async (req: Request, res: Response) => {
     return res.json(profile)
 }
 
+export const getProfileById = async (req: Request, res: Response) => {
+    const profile = await userService.getUserById(req.params.id)
+    return res.json(profile)
+}
+
 export const listUsers = async (_req: Request, res: Response) => {
     const users = await userService.getAllUsers()
     res.json(users)

@@ -8,6 +8,7 @@ const router = Router()
 
 router.post("/", asyncHandler(userController.createUser))
 router.get("/me", authMiddleware, asyncHandler(userController.getProfile))
+router.get("/:id", asyncHandler(userController.getProfileById))
 router.get("/", authMiddleware, asyncHandler(userController.listUsers))
 
 export default router
