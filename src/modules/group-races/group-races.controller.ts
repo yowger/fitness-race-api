@@ -280,3 +280,36 @@ export const updateParticipantBibController = async (
         res.status(400).json({ error: (err as Error).message })
     }
 }
+
+export const getResultsByRacePaginatedSchema = z.object({
+    userId: z.string(),
+    limit: z.number().int().min(1).max(100).optional(),
+    offset: z.number().int().min(0).optional(),
+})
+
+const getResultsByRacePaginatedValidator = validator({
+    query: getResultsByRacePaginatedSchema,
+})
+
+export const getResultsByRacePaginatedController = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const {
+            userId,
+            limit = 50,
+            offset = 0,
+        } = getResultsByRacePaginatedValidator.getQuery(req)
+
+        const resultsWithCount = await raceService.getRunnerResultsPaginated({
+            runnerUserId: userId,
+            limit,
+            offset,
+        })
+
+        res.json(resultsWithCount)
+    } catch (err) {
+        if (err instanceof Error) res.status(400).json({ error: err.message })
+    }
+}

@@ -573,3 +573,139 @@ export const updateParticipantBib = async (params: {
     if (error) throw new Error(error.message)
     return data
 }
+
+interface GetRunnerResultsPaginatedParams {
+    runnerUserId: string
+    limit?: number
+    offset?: number
+}
+
+interface RunnerResultsPaginatedResponse {
+    results: {
+        race_id: string
+        bib_number: number | null
+        total_participants: number
+        race: {
+            id: string
+            name: string
+            description?: string
+            banner_url?: string
+            start_time: string
+            end_time?: string
+            created_by?: string
+            route?: {
+                id: string
+                name: string
+                description?: string
+                distance?: number
+                start_address?: string
+                end_address?: string
+            } | null
+        }
+        result: {
+            finish_time: number | null
+            position: number | null
+            status: string
+        }
+    }[]
+    totalRaces: number
+}
+
+export const getRunnerResultsPaginated = async ({
+    runnerUserId,
+    limit = 10,
+    offset = 0,
+}: GetRunnerResultsPaginatedParams) => {
+    if (!runnerUserId) {
+        throw new Error("runnerUserId is required")
+    }
+
+    const {
+        data: participants,
+        count,
+        error: participantsError,
+    } = await supabase
+        .from("race_participants")
+        .select(
+            `
+        race_id,
+        bib_number,
+        joined_at,
+        group_races (
+            id,
+            name,
+            description,
+            banner_url,
+            start_time,
+            end_time,
+            created_by,
+            routes (
+                id,
+                name,
+                description,
+                distance,
+                start_address,
+                end_address
+            )
+        )
+        `,
+            { count: "exact" }
+        )
+        .eq("user_id", runnerUserId)
+        .order("joined_at", { ascending: false })
+        .range(offset, offset + limit - 1)
+
+    if (participantsError) {
+        throw new Error(participantsError.message)
+    }
+
+    const { data: raceResults, error: resultsError } = await supabase
+        .from("race_results")
+        .select("race_id, finish_time, position, status")
+        .eq("user_id", runnerUserId)
+
+    if (resultsError) {
+        throw new Error(resultsError.message)
+    }
+
+    const raceIds = (participants ?? []).map((p) => p.race_id)
+
+    const { data: participantCounts, error: countError } = await supabase
+        .from("race_participants")
+        .select("race_id", { count: "exact" })
+        .in("race_id", raceIds)
+
+    if (countError) {
+        throw new Error(countError.message)
+    }
+
+    const participantsCountMap = (participantCounts ?? []).reduce<
+        Record<string, number>
+    >((acc, row) => {
+        acc[row.race_id] = (acc[row.race_id] ?? 0) + 1
+        return acc
+    }, {})
+
+    const mergedResults = (participants ?? []).map((p) => {
+        const r = raceResults?.find((res) => res.race_id === p.race_id)
+
+        return {
+            race_id: p.race_id,
+            bib_number: p.bib_number ?? null,
+            total_participants: participantsCountMap[p.race_id] ?? 0,
+            race: {
+                ...p.group_races,
+            },
+            result: {
+                finish_time: r?.finish_time ?? null,
+                position: r?.position ?? null,
+                status: r?.status ?? "DNF",
+            },
+        }
+    })
+
+    return {
+        results: mergedResults,
+        totalRaces: count ?? 0,
+    }
+}

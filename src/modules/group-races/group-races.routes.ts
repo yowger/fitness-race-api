@@ -30,6 +30,10 @@ router.get(
 )
 
 router.post("/results", authMiddleware, asyncHandler(raceController.addResult))
+router.get(
+    "/results/paginated",
+    asyncHandler(raceController.getResultsByRacePaginatedController)
+)
 router.post(
     "/results/publish",
     authMiddleware,
