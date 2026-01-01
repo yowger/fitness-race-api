@@ -281,8 +281,11 @@ export const updateParticipantBibController = async (
     }
 }
 
+const raceStatusEnum = z.enum(["upcoming", "ongoing", "finished", "complete"])
+
 export const getResultsByRacePaginatedSchema = z.object({
     userId: z.string(),
+    status: raceStatusEnum.optional(),
     limit: z.number().int().min(1).max(100).optional(),
     offset: z.number().int().min(0).optional(),
 })
@@ -298,12 +301,14 @@ export const getResultsByRacePaginatedController = async (
     try {
         const {
             userId,
+            status,
             limit = 50,
             offset = 0,
         } = getResultsByRacePaginatedValidator.getQuery(req)
 
         const resultsWithCount = await raceService.getRunnerResultsPaginated({
             runnerUserId: userId,
+            status,
             limit,
             offset,
         })

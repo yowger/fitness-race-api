@@ -574,8 +574,11 @@ export const updateParticipantBib = async (params: {
     return data
 }
 
+type GroupRaceStatus = "upcoming" | "ongoing" | "finished" | "complete"
+
 interface GetRunnerResultsPaginatedParams {
     runnerUserId: string
+    status?: GroupRaceStatus
     limit?: number
     offset?: number
 }
@@ -613,6 +616,7 @@ interface RunnerResultsPaginatedResponse {
 
 export const getRunnerResultsPaginated = async ({
     runnerUserId,
+    status,
     limit = 10,
     offset = 0,
 }: GetRunnerResultsPaginatedParams) => {
@@ -620,43 +624,57 @@ export const getRunnerResultsPaginated = async ({
         throw new Error("runnerUserId is required")
     }
 
-    const {
-        data: participants,
-        count,
-        error: participantsError,
-    } = await supabase
+    let participantsQuery = supabase
         .from("race_participants")
         .select(
             `
-        race_id,
-        bib_number,
-        joined_at,
-        group_races (
-            id,
-            name,
-            description,
-            banner_url,
-            start_time,
-            end_time,
-            created_by,
-            routes (
+            race_id,
+            bib_number,
+            joined_at,
+            group_races (
                 id,
                 name,
                 description,
-                distance,
-                start_address,
-                end_address
+                banner_url,
+                start_time,
+                end_time,
+                created_by,
+                status,
+                routes (
+                    id,
+                    name,
+                    description,
+                    distance,
+                    start_address,
+                    end_address
+                )
             )
-        )
-        `,
+            `,
             { count: "exact" }
         )
         .eq("user_id", runnerUserId)
         .order("joined_at", { ascending: false })
         .range(offset, offset + limit - 1)
 
+    if (status) {
+        participantsQuery = participantsQuery.eq("group_races.status", status)
+    }
+
+    const {
+        data: participants,
+        count,
+        error: participantsError,
+    } = await participantsQuery
+
     if (participantsError) {
         throw new Error(participantsError.message)
+    }
+
+    if (!participants || participants.length === 0) {
+        return {
+            results: [],
+            totalRaces: count ?? 0,
+        }
     }
 
     const { data: raceResults, error: resultsError } = await supabase
@@ -668,11 +686,11 @@ export const getRunnerResultsPaginated = async ({
         throw new Error(resultsError.message)
     }
 
-    const raceIds = (participants ?? []).map((p) => p.race_id)
+    const raceIds = participants.map((p) => p.race_id)
 
     const { data: participantCounts, error: countError } = await supabase
         .from("race_participants")
-        .select("race_id", { count: "exact" })
+        .select("race_id")
         .in("race_id", raceIds)
 
     if (countError) {
@@ -686,7 +704,7 @@ export const getRunnerResultsPaginated = async ({
         return acc
     }, {})
 
-    const mergedResults = (participants ?? []).map((p) => {
+    const mergedResults = participants.map((p) => {
         const r = raceResults?.find((res) => res.race_id === p.race_id)
 
         return {
