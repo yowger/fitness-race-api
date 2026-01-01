@@ -22,7 +22,7 @@ interface GetAllRacesFilters {
     userId?: string
     name?: string
     createdBy?: string
-    status?: "upcoming" | "ongoing" | "finished"
+    status?: "upcoming" | "ongoing" | "finished" | "complete"
     startDate?: string
     endDate?: string
     limit?: number
