@@ -313,3 +313,28 @@ export const getResultsByRacePaginatedController = async (
         if (err instanceof Error) res.status(400).json({ error: err.message })
     }
 }
+
+export const getRunnerProfileStatsSchema = z.object({
+    userId: z.string(),
+})
+
+const getRunnerProfileStatsValidator = validator({
+    query: getRunnerProfileStatsSchema,
+})
+
+export const getRunnerProfileStatsController = async (
+    req: Request,
+    res: Response
+) => {
+    try {
+        const { userId } = getRunnerProfileStatsValidator.getQuery(req)
+
+        const stats = await raceService.getRunnerProfileStats(userId)
+
+        res.json(stats)
+    } catch (err) {
+        res.status(400).json({
+            error: (err as Error).message,
+        })
+    }
+}

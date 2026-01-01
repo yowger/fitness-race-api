@@ -709,3 +709,79 @@ export const getRunnerResultsPaginated = async ({
         totalRaces: count ?? 0,
     }
 }
+
+interface RunnerProfileStats {
+    totalRaces: number
+    totalDistance: string
+    totalTime: string
+    averagePace: string
+}
+
+export const getRunnerProfileStats = async (
+    userId: string
+): Promise<RunnerProfileStats> => {
+    if (!userId) throw new Error("userId is required")
+
+    const { data, error } = await supabase
+        .from("race_results")
+        .select(
+            `
+            finish_time,
+            group_races (
+                routes ( distance )
+            )
+        `
+        )
+        .eq("user_id", userId)
+        .eq("status", "Finished")
+
+    if (error) throw new Error(error.message)
+    if (!data || data.length === 0) {
+        return {
+            totalRaces: 0,
+            totalDistance: "0 km",
+            totalTime: "0:00:00",
+            averagePace: "— /km",
+        }
+    }
+
+    let totalDistance = 0
+    let totalTime = 0
+
+    data.forEach((r) => {
+        const groupRace = r.group_races?.[0]
+        const route = groupRace?.routes?.[0]
+
+        const distance = route?.distance ?? 0
+        const time = r.finish_time ?? 0
+
+        totalDistance += Number(distance)
+        totalTime += Number(time)
+    })
+
+    const totalRaces = data.length
+
+    return {
+        totalRaces,
+        totalDistance: formatKm(totalDistance),
+        totalTime: formatDuration(totalTime),
+        averagePace: formatPace(totalTime, totalDistance),
+    }
+}
+
+const formatKm = (km: number) => `${km.toFixed(1)} km`
+
+const formatDuration = (seconds: number) => {
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    const s = seconds % 60
+    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+}
+
+const formatPace = (seconds: number, km: number) => {
+    if (km === 0) return "— /km"
+    const pace = Math.floor(seconds / km)
+    const m = Math.floor(pace / 60)
+    const s = pace % 60
+    return `${m}:${String(s).padStart(2, "0")} /km`
+}

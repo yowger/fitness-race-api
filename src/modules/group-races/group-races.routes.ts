@@ -44,4 +44,9 @@ router.get("/:raceId/results", asyncHandler(raceController.getResultsByRace))
 router.post("/:raceId/start", authMiddleware, raceController.startRace)
 router.post("/:raceId/end", authMiddleware, raceController.endRace)
 
+router.get(
+    "/runners/stats",
+    asyncHandler(raceController.getRunnerProfileStatsController)
+)
+
 export default router
